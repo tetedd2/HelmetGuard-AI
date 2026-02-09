@@ -1,15 +1,25 @@
-const video = document.getElementById("video");
+const video = document.getElementById("camera");
+let streamRef = null;
+let intervalRef = null;
 
 async function startCamera() {
     const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "environment" },
         audio: false
     });
-    video.srcObject = stream;
 
-    setInterval(captureAndSend, 1000); // ตรวจจับทุก 1 วินาที
+    video.srcObject = stream;
+    streamRef = stream;
+
+    intervalRef = setInterval(captureAndSend, 1000);
 }
 
+function stopCamera() {
+    if (streamRef) {
+        streamRef.getTracks().forEach(track => track.stop());
+    }
+    clearInterval(intervalRef);
+}
 
 async function captureAndSend() {
     if (!video.videoWidth) return;
