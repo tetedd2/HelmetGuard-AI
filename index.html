@@ -1,0 +1,121 @@
+<!-- index.html : หน้า Live + แคปภาพ -->
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<title>Helmet Detection - Live</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<h1>📷 Live Detection</h1>
+<nav>
+  <a href="index.html">Live</a> |
+  <a href="dashboard.html">Dashboard</a> |
+  <a href="logs.html">Logs</a>
+</nav>
+
+<div class="camera-box">
+  <img id="camera" src="">
+</div>
+
+<div class="controls">
+  <button onclick="startCamera()">▶ Start</button>
+  <button onclick="stopCamera()">⏹ Stop</button>
+  <button onclick="capture()">📸 Capture</button>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
+
+
+<!-- dashboard.html : สถิติรายวัน -->
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<title>Dashboard</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<h1>📊 Dashboard รายวัน</h1>
+<nav>
+  <a href="index.html">Live</a> |
+  <a href="dashboard.html">Dashboard</a> |
+  <a href="logs.html">Logs</a>
+</nav>
+
+<div class="card">
+  <h2>วันนี้</h2>
+  <p>วันที่: <span id="date"></span></p>
+  <p>จำนวนครั้งไม่ใส่หมวก: <span id="count"></span></p>
+</div>
+
+<script>
+async function loadStats(){
+  let res = await fetch('/stats');
+  let data = await res.json();
+  document.getElementById('date').innerText = data.date;
+  document.getElementById('count').innerText = data.no_helmet;
+}
+setInterval(loadStats,1000);
+</script>
+</body>
+</html>
+
+
+<!-- logs.html : ตาราง Log เวลา + จำนวน -->
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<title>Logs</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<h1>🧾 Log การตรวจจับ</h1>
+<nav>
+  <a href="index.html">Live</a> |
+  <a href="dashboard.html">Dashboard</a> |
+  <a href="logs.html">Logs</a>
+</nav>
+
+<div class="card">
+<table>
+<thead>
+<tr><th>เวลา</th><th>เหตุการณ์</th></tr>
+</thead>
+<tbody id="logTable"></tbody>
+</table>
+</div>
+
+<script>
+async function loadLogs(){
+  let res = await fetch('/logs');
+  let data = await res.json();
+  let html = '';
+  data.forEach(l=>{
+    html += `<tr><td>${l.time}</td><td>${l.event}</td></tr>`;
+  });
+  document.getElementById('logTable').innerHTML = html;
+}
+setInterval(loadLogs,1000);
+</script>
+</body>
+</html>
+
+
+/* script.js */
+let camera = document.getElementById('camera');
+
+function startCamera(){
+  camera.src = '/video_feed';
+}
+
+function stopCamera(){
+  camera.src = '';
+}
+
+function capture(){
+  fetch('/capture',{method:'POST'});
+}
