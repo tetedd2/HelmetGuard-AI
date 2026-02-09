@@ -1,10 +1,11 @@
-from flask import Flask, Response, request, jsonify
+from flask import Flask, Response, request, jsonify, send_from_directory
 import cv2
 import numpy as np
 from ultralytics import YOLO
 from datetime import datetime, date
+import os
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder=".")
 model = YOLO("helmet.pt")
 
 today_count = 0
@@ -12,9 +13,12 @@ current_date = date.today().isoformat()
 
 @app.route('/')
 def index():
-    return open("index.html", encoding="utf-8").read()
+    return send_from_directory('.', 'index.html')
 
-# รับภาพจากมือถือ → ตรวจจับ → ส่งภาพกลับ
+@app.route('/<path:path>')
+def static_files(path):
+    return send_from_directory('.', path)
+
 @app.route('/detect', methods=['POST'])
 def detect():
     global today_count, current_date
@@ -37,24 +41,20 @@ def detect():
 
             if label.lower() in ["no helmet", "without helmet", "no-helmet"]:
                 no_helmet += 1
-                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
-                cv2.putText(frame, "NO HELMET",
-                            (x1, y1 - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.9,
-                            (0, 0, 255), 2)
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (0,0,255), 2)
+                cv2.putText(frame, "NO HELMET", (x1, y1-10),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 2)
 
     today = date.today().isoformat()
     if today != current_date:
         today_count = 0
         current_date = today
 
-    if no_helmet > 0:
-        today_count += no_helmet
+    today_count += no_helmet
 
     _, jpg = cv2.imencode('.jpg', frame)
     return Response(jpg.tobytes(), mimetype='image/jpeg')
 
-# API ส่งค่าสถิติ realtime ไป dashboard
 @app.route('/stats')
 def stats():
     return jsonify({
@@ -64,4 +64,4 @@ def stats():
     })
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 7860)))

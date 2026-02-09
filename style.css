@@ -251,3 +251,46 @@ body {
     font-weight: bold;
     color: #0f0;
 }
+/* ค้นหาส่วน .logo แล้วเพิ่ม/แก้ไขดังนี้ */
+.logo {
+    font-size: 1.5rem;
+    font-weight: 600;
+    display: flex;         /* เพิ่มเพื่อให้โลโก้กับตัวอักษรอยู่บรรทัดเดียวกัน */
+    align-items: center;    /* จัดให้อยู่กึ่งกลางแนวตั้ง */
+    gap: 10px;             /* เว้นระยะห่างระหว่างรูปกับตัวอักษร */
+}
+
+/* เพิ่ม Style สำหรับรูปภาพโลโก้ */
+.school-logo {
+    height: 40px;          /* ปรับความสูงตามความเหมาะสม */
+    width: auto;
+    object-fit: contain;
+}
+/* เพิ่มส่วนนี้ใน style.css */
+body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* ใส่ชื่อไฟล์ภาพของคุณที่นี่ */
+    background-image: url('fcb59448-16d2-4594-95bd-dc854fd7d198.png'); 
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 180%; /* ปรับขนาดโลโก้ตามต้องการ */
+    opacity: 0.5; /* ปรับค่าความจาง (0.1 คือจางมาก, 1.0 คือชัดปกติ) */
+    z-index: -1; /* ให้อยู่หลังสุด */
+    pointer-events: none; /* เพื่อให้ยังกดปุ่มต่างๆ บนหน้าเว็บได้ปกติ */
+}
+
+/* ปรับให้พื้นหลังของหน้าจอหลักโปร่งใสเพื่อให้เห็นภาพข้างหลัง */
+body {
+    background-color: var(--bg); /* หรือเปลี่ยนเป็น transparent หากต้องการให้เห็นชัดขึ้น */
+    position: relative;
+}
+
+.main-card {
+    /* ปรับพื้นหลังการ์ดให้มีความโปร่งใสเล็กน้อยเพื่อให้เห็นโลโก้จางๆ ทะลุขึ้นมา (ตัวเลือกเสริม) */
+    background: rgba(255, 255, 255, 0.9); 
+}
