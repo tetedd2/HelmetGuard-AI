@@ -1,1 +1,112 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Helmet Detection System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    
+<header class="navbar">
+    <div class="container">
+        <h1 class="logo">
+            <img src="{{ url_for('static', filename='001.jpg') }}"> 
+            Helmet<span>AI</span>
+        </h1>
+        <nav class="nav-links">
+            <a href="#" onclick="showPage('live')" id="nav-live" class="active">Live</a>
+            <a href="#" onclick="showPage('guide')" id="nav-guide">คู่มือ</a>
+            <a href="#" onclick="showPage('dashboard')" id="nav-dashboard">Dashboard</a>
+        </nav>
+    </div>
+</header>
+<div id="page-dashboard" style="display:none">
+    <section class="main-card">
+        <h2>Realtime Dashboard</h2>
+        <div id="snapshots"></div>
+
+        <div class="dashboard-grid">
+            <div class="dash-card">
+                <h3>จำนวนไม่ใส่หมวก</h3>
+                <p id="nohelmet-count">0</p>
+            </div>
+
+            <div class="dash-card">
+                <h3>เวลาอัปเดตล่าสุด</h3>
+                <p id="last-update">-</p>
+            </div>
+        </div>
+
+        <canvas id="chart" height="120"></canvas>
+    </section>
+</div>
+
+
+<main class="container">
+    <div id="page-live">
+        <section class="main-card">
+            <div class="status-badge">● LIVE</div>
+
+            <div class="camera-container">
+                <video id="camera" autoplay playsinline muted></video>
+            </div>
+
+            <div class="controls">
+                <button onclick="startCamera()" class="btn btn-primary">
+                    เริ่มการทำงาน
+                </button>
+                <button onclick="stopCamera()" class="btn btn-outline">
+                    หยุด
+                </button>
+            </div>
+        </section>
+    </div>
+</main>
+
+
+            <section class="stats-grid">
+                <div class="stat-card">
+                    <span class="label">วันที่</span>
+                    <span id="date" class="value">-</span>
+                </div>
+                <div class="stat-card alert">
+                    <span class="label">ตรวจพบไม่สวมหมวกวันนี้</span>
+                    <span id="count" class="value">0</span>
+                </div>
+            </section>
+        </div>
+
+        <div id="page-guide" style="display: none;">
+            <h2 class="section-title">สาระน่ารู้และคู่มือการใช้งาน</h2>
+            
+            <div class="video-grid">
+                <div class="video-card">
+                    <div class="video-wrapper">
+                    <iframe width="560" height="315" src="https://www.youtube.com/embed/5l6PGH7gNig?si=GpFw8gU8UGdWD1Ao" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-info">
+                        <h3>การขับขี่รถจักรยานยนต์ตามกฎจราจร</h3>
+                        <p>สื่อโมชันกราฟิก เรื่องการขับขี่รถจักรยานยนต์ตามกฎจราจรโดย นางสาวนิชานันท์ นิยมเดชา นักศึกษาหลักสูตรการจัดการสารสนเทศและสื่อดิจิทัล สำนักวิชาสารสนเทศศาสตร์ มหาวิทยาลัยวลัยลักษณ์</p>
+                    </div>
+                </div>
+
+                <div class="video-card">
+                    <div class="video-wrapper">
+                       <iframe width="560" height="315" src="https://www.youtube.com/embed/HPjKGXg2Xlc?si=XT2it7QApPQhBNve&amp;start=1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-info">
+                        <h3>ใส่หมวกกันน็อก กับ ไม่สวมหมวกกันน็อก ต่างกันอย่างไร?</h3>
+                        <p>ประมาทแค่ครั้งเดียว อาจถึงชีวิตคิดให้ดีก่อนเสี่ยง 💭</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+
+</html>
 
