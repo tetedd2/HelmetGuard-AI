@@ -1,26 +1,50 @@
 const video = document.getElementById("camera");
+
 let streamRef = null;
 let intervalRef = null;
 
+// ===============================
+// START CAMERA
+// ===============================
 async function startCamera() {
-    const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
-        audio: false
-    });
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "environment" },
+            audio: false
+        });
 
-    video.srcObject = stream;
-    streamRef = stream;
+        video.srcObject = stream;
+        streamRef = stream;
 
-    intervalRef = setInterval(captureAndSend, 1000);
+        intervalRef = setInterval(captureAndSend, 1000);
+        console.log("📷 Camera started");
+
+    } catch (err) {
+        alert("ไม่สามารถเปิดกล้องได้: " + err.message);
+        console.error(err);
+    }
 }
 
+// ===============================
+// STOP CAMERA
+// ===============================
 function stopCamera() {
     if (streamRef) {
         streamRef.getTracks().forEach(track => track.stop());
+        streamRef = null;
     }
-    clearInterval(intervalRef);
+
+    if (intervalRef) {
+        clearInterval(intervalRef);
+        intervalRef = null;
+    }
+
+    console.log("⛔ Camera stopped");
 }
 
+// ===============================
+// CAPTURE FRAME → SEND TO FLASK
+// ===============================
 async function captureAndSend() {
     if (!video.videoWidth) return;
 
@@ -31,74 +55,49 @@ async function captureAndSend() {
     const ctx = canvas.getContext("2d");
     ctx.drawImage(video, 0, 0);
 
-    const blob = await new Promise(r => canvas.toBlob(r, "image/jpeg", 0.7));
+    const blob = await new Promise(resolve =>
+        canvas.toBlob(resolve, "image/jpeg", 0.75)
+    );
 
     const form = new FormData();
-    form.append("image", blob);
+    form.append("image", blob, "frame.jpg");
 
-    const res = await fetch("/detect", {
-        method: "POST",
-        body: form
-    });
+    try {
+        const res = await fetch("/detect", {
+            method: "POST",
+            body: form
+        });
 
-    const data = await res.json();
+        if (!res.ok) throw new Error("Server error");
 
-    document.getElementById("nohelmet-count").innerText = data.today_total;
-    document.getElementById("last-update").innerText = data.time;
-}
-const video = document.getElementById("camera");
-let streamRef = null;
-let intervalRef = null;
+        const data = await res.json();
 
-async function startCamera() {
-    const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
-        audio: false
-    });
+        updateDashboard(data);
 
-    video.srcObject = stream;
-    streamRef = stream;
-
-    intervalRef = setInterval(captureAndSend, 1000);
-}
-
-function stopCamera() {
-    if (streamRef) {
-        streamRef.getTracks().forEach(track => track.stop());
+    } catch (err) {
+        console.error("❌ Detect error:", err);
     }
-    clearInterval(intervalRef);
 }
 
-async function captureAndSend() {
-    if (!video.videoWidth) return;
+// ===============================
+// UPDATE DASHBOARD
+// ===============================
+function updateDashboard(data) {
+    if (document.getElementById("nohelmet-count"))
+        document.getElementById("nohelmet-count").innerText = data.today_nohelmet;
 
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    if (document.getElementById("last-update"))
+        document.getElementById("last-update").innerText = data.time;
 
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(video, 0, 0);
-
-    const blob = await new Promise(r => canvas.toBlob(r, "image/jpeg", 0.7));
-
-    const form = new FormData();
-    form.append("image", blob);
-
-    const res = await fetch("/detect", {
-        method: "POST",
-        body: form
-    });
-
-    const data = await res.json();
-
-    document.getElementById("nohelmet-count").innerText = data.today_nohelmet;
-    document.getElementById("last-update").innerText = data.time;
-
-    renderSnapshots(data.snapshots);
+    if (data.snapshots)
+        renderSnapshots(data.snapshots);
 }
 
+// ===============================
+// RENDER SNAPSHOT IMAGES
+// ===============================
 function renderSnapshots(images) {
-    let box = document.getElementById("snapshots");
+    const box = document.getElementById("snapshots");
     if (!box) return;
 
     box.innerHTML = "";
@@ -107,8 +106,9 @@ function renderSnapshots(images) {
         const el = document.createElement("img");
         el.src = img;
         el.style.width = "100%";
-        el.style.borderRadius = "10px";
+        el.style.borderRadius = "12px";
         el.style.marginBottom = "10px";
+        el.style.boxShadow = "0 2px 10px rgba(0,0,0,.2)";
         box.appendChild(el);
     });
 }
