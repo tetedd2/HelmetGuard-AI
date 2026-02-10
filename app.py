@@ -4,12 +4,19 @@ import numpy as np
 from ultralytics import YOLO
 from datetime import datetime, date
 import os
+import uuid
 
 app = Flask(__name__, static_folder=".")
 
+# โหลดโมเดล
 model = YOLO("helmet.pt")
 
-today_count = 0
+# โฟลเดอร์เก็บ snapshot
+SNAP_DIR = "snapshots"
+os.makedirs(SNAP_DIR, exist_ok=True)
+
+today_nohelmet = 0
+today_helmet = 0
 current_date = date.today().isoformat()
 
 
@@ -25,7 +32,7 @@ def static_files(path):
 
 @app.route("/detect", methods=["POST"])
 def detect():
-    global today_count, current_date
+    global today_nohelmet, today_helmet, current_date
 
     if "image" not in request.files:
         return jsonify({"error": "No image"}), 400
@@ -36,34 +43,46 @@ def detect():
 
     results = model(frame, conf=0.4, verbose=False)
 
-    detections = []
-    no_helmet = 0
+    helmet_count = 0
+    nohelmet_count = 0
+    snapshots = []
 
     for r in results:
         for box in r.boxes:
             cls = int(box.cls[0])
             label = model.names[cls]
-            conf = float(box.conf[0])
 
-            if label.lower() == "no_helmet":
-                no_helmet += 1
+            x1, y1, x2, y2 = map(int, box.xyxy[0])
 
-            detections.append({
-                "label": label,
-                "confidence": round(conf, 2)
-            })
+            if label.lower() == "helmet":
+                helmet_count += 1
 
+            elif label.lower() == "no_helmet":
+                nohelmet_count += 1
+
+                crop = frame[y1:y2, x1:x2]
+                if crop.size > 0:
+                    filename = f"{uuid.uuid4().hex}.jpg"
+                    path = os.path.join(SNAP_DIR, filename)
+                    cv2.imwrite(path, crop)
+                    snapshots.append(path)
+
+    # reset รายวัน
     today = date.today().isoformat()
     if today != current_date:
-        today_count = 0
+        today_nohelmet = 0
+        today_helmet = 0
         current_date = today
 
-    today_count += no_helmet
+    today_nohelmet += nohelmet_count
+    today_helmet += helmet_count
 
     return jsonify({
-        "detections": detections,
-        "no_helmet": no_helmet,
-        "today_total": today_count,
+        "helmet": helmet_count,
+        "no_helmet": nohelmet_count,
+        "today_helmet": today_helmet,
+        "today_nohelmet": today_nohelmet,
+        "snapshots": snapshots[-3:],  # ส่งแค่ 3 รูปล่าสุด
         "time": datetime.now().strftime("%H:%M:%S")
     })
 
@@ -72,10 +91,16 @@ def detect():
 def stats():
     return jsonify({
         "date": current_date,
-        "no_helmet": today_count,
+        "helmet": today_helmet,
+        "no_helmet": today_nohelmet,
         "time": datetime.now().strftime("%H:%M:%S")
     })
 
 
+@app.route("/snapshots/<path:filename>")
+def get_snapshot(filename):
+    return send_from_directory(SNAP_DIR, filename)
+
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
+    app.run(host="0.0.0.0", port=8000, debug=True)
