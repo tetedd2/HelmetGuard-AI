@@ -6,13 +6,13 @@ from datetime import datetime, date
 import os
 import uuid
 
-app = Flask(__name__, static_folder=".")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# โหลดโมเดล
+app = Flask(__name__, static_folder=BASE_DIR)
+
 model = YOLO("helmet.pt")
 
-# โฟลเดอร์เก็บ snapshot
-SNAP_DIR = "snapshots"
+SNAP_DIR = os.path.join(BASE_DIR, "snapshots")
 os.makedirs(SNAP_DIR, exist_ok=True)
 
 today_nohelmet = 0
@@ -22,12 +22,7 @@ current_date = date.today().isoformat()
 
 @app.route("/")
 def index():
-    return send_from_directory(".", "index.html")
-
-
-@app.route("/<path:path>")
-def static_files(path):
-    return send_from_directory(".", path)
+    return send_from_directory(BASE_DIR, "index.html")
 
 
 @app.route("/detect", methods=["POST"])
@@ -65,9 +60,8 @@ def detect():
                     filename = f"{uuid.uuid4().hex}.jpg"
                     path = os.path.join(SNAP_DIR, filename)
                     cv2.imwrite(path, crop)
-                    snapshots.append(path)
+                    snapshots.append("/snapshots/" + filename)
 
-    # reset รายวัน
     today = date.today().isoformat()
     if today != current_date:
         today_nohelmet = 0
@@ -82,17 +76,7 @@ def detect():
         "no_helmet": nohelmet_count,
         "today_helmet": today_helmet,
         "today_nohelmet": today_nohelmet,
-        "snapshots": snapshots[-3:],  # ส่งแค่ 3 รูปล่าสุด
-        "time": datetime.now().strftime("%H:%M:%S")
-    })
-
-
-@app.route("/stats")
-def stats():
-    return jsonify({
-        "date": current_date,
-        "helmet": today_helmet,
-        "no_helmet": today_nohelmet,
+        "snapshots": snapshots[-3:],
         "time": datetime.now().strftime("%H:%M:%S")
     })
 
@@ -103,4 +87,4 @@ def get_snapshot(filename):
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000, debug=True)
+    app.run(host="0.0.0.0", port=8000)
